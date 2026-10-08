@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: docker/node/Dockerfile
+    user: root
+    command: ["sh", "-c", "npm install --package-lock=false --omit=dev && exec su node -s /bin/sh -c 'node src/server.js'"]
     ports:
       - "${APP_PORT:-3000}:3000"
     environment:
@@ -14,6 +16,7 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD:-dwes}
     volumes:
       - ./src:/app/src:ro
+      - ./package.json:/app/package.json:ro
       - node_modules:/app/node_modules
     depends_on:
       mysql:

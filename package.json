@@ -1,8 +1,16 @@
 {
-  "name": "node-express-project",
+  "name": "tasks-api",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "scripts": { "start": "node --watch src/app.js" },
-  "dependencies": { "express": "^5.1.0", "mysql2": "^3.14.0" }
+  "description": "API REST de tareas con Node.js, Express y MySQL",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "mysql2": "^3.14.0"
+  }
 }

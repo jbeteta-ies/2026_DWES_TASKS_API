@@ -1,8 +1,32 @@
 import express from "express";
+import {
+  errorHandler,
+  notFoundHandler
+} from "./errors/error-handler.js";
+import { tasksRouter } from "./routes/tasks.routes.js";
 
-const app = express();
-const port = Number(process.env.PORT ?? 3000);
-app.use(express.json());
-app.get("/", (_req, res) => res.json({ name: "API Node.js operativa", express: true }));
-app.get("/health", (_req, res) => res.json({ status: "ok" }));
-app.listen(port, "0.0.0.0", () => console.log(`API escuchando en ${port}`));
+export const app = express();
+
+app.disable("x-powered-by");
+
+app.use(express.json({
+  limit: "100kb"
+}));
+
+app.get("/", (_req, res) => {
+  return res.status(200).json({
+    name: "Tasks API",
+    version: "1.0.0"
+  });
+});
+
+app.get("/health", (_req, res) => {
+  return res.status(200).json({
+    status: "ok"
+  });
+});
+
+app.use("/tasks", tasksRouter);
+
+app.use(notFoundHandler);
+app.use(errorHandler);

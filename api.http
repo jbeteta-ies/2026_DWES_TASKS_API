@@ -1,0 +1,97 @@
+@baseUrl = http://localhost:3000
+
+### Información
+GET {{baseUrl}}/
+
+### Estado de la API
+GET {{baseUrl}}/health
+
+### Listar tareas
+GET {{baseUrl}}/tasks
+Accept: application/json
+
+### Filtrar por estado
+GET {{baseUrl}}/tasks?status=in_progress
+Accept: application/json
+
+### Filtrar por prioridad
+GET {{baseUrl}}/tasks?priority=high
+Accept: application/json
+
+### Consultar una tarea
+GET {{baseUrl}}/tasks/1
+Accept: application/json
+
+### Crear una tarea
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Preparar práctica",
+  "description": "Completar el CRUD con MySQL",
+  "status": "pending",
+  "priority": "high",
+  "dueDate": "2026-10-15"
+}
+
+### Crear una tarea mínima
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Revisar documentación"
+}
+
+### Sustituir una tarea
+PUT {{baseUrl}}/tasks/1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Preparar entorno actualizado",
+  "description": "Revisar Node.js, npm y MySQL",
+  "status": "completed",
+  "priority": "medium",
+  "dueDate": null
+}
+
+### Modificar parcialmente una tarea
+PATCH {{baseUrl}}/tasks/1
+Content-Type: application/json
+Accept: application/json
+
+{
+  "status": "completed"
+}
+
+### Eliminar una tarea
+DELETE {{baseUrl}}/tasks/2
+
+### Identificador no válido
+GET {{baseUrl}}/tasks/abc
+Accept: application/json
+
+### Tarea inexistente
+GET {{baseUrl}}/tasks/999999
+Accept: application/json
+
+### Datos no válidos
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "",
+  "status": "terminada",
+  "priority": "urgente",
+  "dueDate": "15/10/2026"
+}
+
+### JSON incorrecto
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+
+{
+  "title": "Falta cerrar el objeto"
