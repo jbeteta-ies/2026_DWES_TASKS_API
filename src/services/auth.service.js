@@ -1,6 +1,7 @@
 import { AppError } from "../errors/AppError.js";
 import * as usersRepository from "../repositories/users.repository.js";
 import { hashPassword, verifyPassword } from "./password.service.js";
+import { signAccessToken, verifyAccessToken } from "./token.service.js";
 import {
   normalizeLoginInput,
   normalizeRegisterInput,
@@ -49,7 +50,7 @@ export async function register(data) {
 /**
  * Comprueba credenciales y devuelve únicamente datos públicos del usuario.
  * @param {unknown} data Credenciales de acceso enviadas por el cliente.
- * @returns {Promise<object>} Usuario sin el campo `passwordHash`.
+ * @returns {Promise<{user: object, accessToken: string}>} Usuario público y JWT.
  */
 export async function login(data) {
   const errors = validateLogin(data);
@@ -75,7 +76,7 @@ export async function login(data) {
     throw new AppError(401, "Correo o contraseña incorrectos");
   }
 
-  return {
+  const publicUser = {
     id: user.id,
     name: user.name,
     email: user.email,
@@ -83,4 +84,48 @@ export async function login(data) {
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
   };
+
+  // El token se emite únicamente después de validar las credenciales.
+  return {
+    user: publicUser,
+    accessToken: signAccessToken(publicUser)
+  };
+}
+
+/**
+ * Verifica un JWT y busca en MySQL los datos actuales de su usuario.
+ * @param {string} token JWT ya extraído de la cabecera Bearer.
+ * @returns {Promise<object>} Usuario público actual; nunca incluye el hash.
+ */
+export async function getCurrentUser(token) {
+  let payload;
+
+  try {
+    payload = verifyAccessToken(token);
+  } catch (error) {
+    if (
+      error.name === "TokenExpiredError" ||
+      error.name === "JsonWebTokenError" ||
+      error.name === "NotBeforeError"
+    ) {
+      throw new AppError(401, "Token no válido o caducado");
+    }
+
+    throw error;
+  }
+
+  // El claim sub contiene el id como texto; se convierte y valida antes de SQL.
+  const userId = Number(payload.sub);
+
+  if (!Number.isInteger(userId) || userId <= 0) {
+    throw new AppError(401, "El token no contiene un sujeto válido");
+  }
+
+  const user = await usersRepository.findPublicById(userId);
+
+  if (!user) {
+    throw new AppError(401, "El usuario del token ya no existe");
+  }
+
+  return user;
 }

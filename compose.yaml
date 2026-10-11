@@ -15,6 +15,10 @@ services:
       DB_USER: ${MYSQL_USER:-dwes}
       DB_PASSWORD: ${MYSQL_PASSWORD:-dwes}
       PASSWORD_ROUNDS: ${PASSWORD_ROUNDS:-12}
+      JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_ISSUER: ${JWT_ISSUER:-tasks-api}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-tasks-api-users}
     volumes:
       - ./src:/app/src:ro
       - ./package.json:/app/package.json:ro

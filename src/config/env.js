@@ -20,6 +20,14 @@ function parsePositiveInteger(value, name) {
   return parsed;
 }
 
+function requireMinLength(value, name, minLength) {
+  if (typeof value !== "string" || value.length < minLength) {
+    throw new Error(`${name} debe tener al menos ${minLength} caracteres`);
+  }
+
+  return value;
+}
+
 export const env = Object.freeze({
   port: parsePositiveInteger(process.env.PORT ?? "3000", "PORT"),
 
@@ -28,6 +36,18 @@ export const env = Object.freeze({
     process.env.PASSWORD_ROUNDS ?? "12",
     "PASSWORD_ROUNDS"
   ),
+
+  // Estos valores configuran la firma y la validez de los access tokens.
+  jwt: Object.freeze({
+    secret: requireMinLength(
+      requireEnv("JWT_SECRET"),
+      "JWT_SECRET",
+      32
+    ),
+    expiresIn: requireEnv("JWT_EXPIRES_IN"),
+    issuer: requireEnv("JWT_ISSUER"),
+    audience: requireEnv("JWT_AUDIENCE")
+  }),
 
   db: Object.freeze({
     host: requireEnv("DB_HOST"),

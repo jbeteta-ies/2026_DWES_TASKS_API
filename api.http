@@ -63,6 +63,7 @@ Accept: application/json
 }
 
 ### Login correcto de Ana (esperado: 200)
+# @name loginAna
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 Accept: application/json
@@ -71,6 +72,28 @@ Accept: application/json
   "email": "ANA@EXAMPLE.COM",
   "password": "una frase de acceso segura"
 }
+
+### Token Bearer de Ana (REST Client toma accessToken del login anterior)
+@anaToken = {{loginAna.response.body.accessToken}}
+
+### Consultar usuario autenticado (esperado: 200)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{anaToken}}
+Accept: application/json
+
+### /auth/me sin token (esperado: 401)
+GET {{baseUrl}}/auth/me
+Accept: application/json
+
+### /auth/me con esquema incorrecto (esperado: 401)
+GET {{baseUrl}}/auth/me
+Authorization: Basic {{anaToken}}
+Accept: application/json
+
+### /auth/me con token manipulado o inválido (esperado: 401)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer token.invalido.manipulado
+Accept: application/json
 
 ### Login con contraseña incorrecta (esperado: 401)
 POST {{baseUrl}}/auth/login

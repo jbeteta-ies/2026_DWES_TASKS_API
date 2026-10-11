@@ -81,8 +81,18 @@ del ejemplo:
 cp .env.example .env
 ```
 
-El `.env` contiene la configuración local de Docker Compose y no se debe subir
-a Git. Para iniciar MySQL y la API:
+Genera un secreto aleatorio para firmar los JWT:
+
+```bash
+node --input-type=module -e "import { randomBytes } from 'node:crypto'; console.log(randomBytes(32).toString('hex'))"
+```
+
+Copia el resultado y sustituye el valor de `JWT_SECRET` en `.env`. El ejemplo
+también configura una caducidad de `15m`, el emisor `tasks-api` y la audiencia
+`tasks-api-users`. El `.env` contiene la configuración local y no se debe subir
+a Git.
+
+Para iniciar MySQL y la API:
 
 ```bash
 docker compose up --build
@@ -122,6 +132,13 @@ respuesta. El login responde `200` con el usuario público; credenciales
 incorrectas responden `401` con el mismo mensaje tanto para un correo existente
 como para uno inexistente.
 
+El login también devuelve `accessToken` y `tokenType: "Bearer"`. La petición
+`GET /auth/me` comprueba la firma, el algoritmo, la caducidad, el emisor y la
+audiencia del token y responde con los datos actuales del usuario. En `api.http`
+puedes ejecutar el login llamado `loginAna` y luego probar `/auth/me` con el
+token obtenido; las pruebas sin token, con esquema incorrecto y con token
+inválido deben devolver `401`.
+
 El archivo `api.http` mantiene también ejemplos de las operaciones CRUD del
 hito actual.
 
@@ -148,7 +165,7 @@ cambios con el siguiente:
 
 1. CRUD persistente con MySQL.
 2. Registro y login con contraseñas almacenadas como hash bcrypt.
-3. Emisión y comprobación de JWT.
+3. Emisión y comprobación de JWT en `/auth/me`.
 4. Middleware de autenticación, autorización y rutas protegidas.
 
 El código incluye comentarios orientados a explicar el recorrido de las
