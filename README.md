@@ -1,34 +1,131 @@
 # API de tareas con Node.js, Express y MySQL
 
-API REST para gestionar tareas con persistencia en MySQL. La base de datos y
-el usuario temporal se configuran en `database/init/create.sql`; las tareas
-se asocian provisionalmente al usuario con identificador `1`.
+Proyecto didáctico para construir paso a paso una API REST de tareas. Las
+soluciones de cada tema se guardan en etiquetas de Git: `main` contiene la
+solución más reciente y completa, y cada etiqueta permite consultar un hito
+anterior.
 
 ## Requisitos
 
+- Git
 - Docker y Docker Compose
-- La extensión REST Client de Visual Studio Code para ejecutar `api.http`
+- Visual Studio Code con la extensión REST Client para ejecutar `api.http`
 
-## Iniciar la aplicación
+## Clonar el proyecto
 
-Desde la raíz del proyecto:
+Abre una terminal y ejecuta:
+
+```bash
+git clone https://github.com/jbeteta-ies/2026_DWES_TASKS_API.git
+cd 2026_DWES_TASKS_API
+```
+
+Puedes comprobar las versiones disponibles con:
+
+```bash
+git tag --list
+```
+
+## Recorrer las soluciones con etiquetas
+
+Cada etiqueta marca el estado del proyecto al completar un tema. Para abrir,
+por ejemplo, la solución del CRUD:
+
+```bash
+git switch --detach u1-crud
+```
+
+En esa versión puedes leer el código y ejecutar la API. Git mostrará que estás
+en modo *detached HEAD*: estás visitando una versión concreta, no trabajando en
+una rama. Es el modo recomendado para explorar las soluciones sin modificarlas.
+
+Para regresar a la solución más reciente:
+
+```bash
+git switch main
+git pull
+```
+
+Si quieres volver a otra versión, repite `git switch --detach` con la etiqueta
+correspondiente. El recorrido previsto es:
+
+| Etiqueta | Contenido |
+| --- | --- |
+| `u1-crud` | CRUD persistente con MySQL (punto de partida) |
+| `u1-05-02-auth` | Registro y login |
+| `u1-05-03-jwt` | Autenticación con JWT y `/auth/me` |
+| `u1-05-04-completo` | Middleware, rutas protegidas y tareas por usuario |
+
+Las etiquetas de los hitos se publicarán a medida que se complete cada tema.
+Si una etiqueta todavía no aparece en `git tag --list`, ese hito aún no está
+disponible. Para descargar las etiquetas publicadas más recientemente:
+
+```bash
+git fetch --tags
+```
+
+No se recomienda crear commits mientras se está en *detached HEAD*. Para
+desarrollar cambios propios, vuelve a `main` y crea una rama de trabajo:
+
+```bash
+git switch main
+git switch -c mi-rama
+```
+
+## Configurar y arrancar la aplicación
+
+Desde la carpeta del proyecto, crea el archivo local de configuración a partir
+del ejemplo:
+
+```bash
+cp .env.example .env
+```
+
+El `.env` contiene la configuración local de Docker Compose y no se debe subir
+a Git. Para iniciar MySQL y la API:
 
 ```bash
 docker compose up --build
 ```
 
-Docker Compose inicia MySQL y, cuando está disponible, la API en
-`http://localhost:3000`. La configuración de puertos y credenciales se puede
-ajustar en `.env`; `.env.example` muestra las variables disponibles.
+Cuando los servicios estén preparados, la API estará disponible en
+`http://localhost:3000`. Para detener los contenedores, pulsa `Ctrl+C` y
+ejecuta:
 
-La base de datos `dwes` utiliza el volumen persistente de Docker. El script de
-`database/init` se ejecuta al inicializar por primera vez ese volumen.
+```bash
+docker compose down
+```
+
+Los datos de MySQL se conservan en un volumen de Docker aunque se detengan los
+contenedores. Para borrar también ese volumen y empezar con una base de datos
+vacía:
+
+```bash
+docker compose down --volumes
+```
+
+Este último comando elimina los datos locales guardados en MySQL.
 
 ## Probar la API
 
-Abre `api.http` en Visual Studio Code y ejecuta cada petición con REST Client.
-El archivo incluye ejemplos de listado, filtros, consulta, creación,
-sustitución, modificación parcial, eliminación y errores.
+Abre `api.http` en Visual Studio Code y ejecuta las peticiones con REST Client.
+En el hito de autenticación también puedes probar el registro y el login.
+Ejecuta primero las peticiones de registro y después las de login. El correo
+debe ser único: si repites un registro ya realizado, la respuesta esperada es
+`409 Conflict`. Puedes volver a empezar con una base de datos vacía mediante
+`docker compose down --volumes` y arrancando de nuevo con
+`docker compose up --build`.
+
+El registro crea cuentas con rol `user`, valida el correo y almacena la
+contraseña como hash bcrypt. Ni el hash ni la contraseña aparecen en la
+respuesta. El login responde `200` con el usuario público; credenciales
+incorrectas responden `401` con el mismo mensaje tanto para un correo existente
+como para uno inexistente.
+
+El archivo `api.http` mantiene también ejemplos de las operaciones CRUD del
+hito actual.
+
+En el hito inicial del CRUD se esperan estas respuestas:
 
 | Operación | Respuesta esperada |
 | --- | ---: |
@@ -41,4 +138,18 @@ sustitución, modificación parcial, eliminación y errores.
 | Datos de tarea no válidos | `422` |
 | JSON mal formado | `400` |
 
-Las tareas creadas permanecen en MySQL después de reiniciar Node.js.
+Las tareas quedan almacenadas en MySQL y permanecen después de reiniciar Node.js.
+
+## Estructura de las versiones
+
+Las versiones avanzan sobre `main` de forma incremental. Al final de cada tema
+se publica una etiqueta para que puedas regresar a ese estado y comparar los
+cambios con el siguiente:
+
+1. CRUD persistente con MySQL.
+2. Registro y login con contraseñas almacenadas como hash bcrypt.
+3. Emisión y comprobación de JWT.
+4. Middleware de autenticación, autorización y rutas protegidas.
+
+El código incluye comentarios orientados a explicar el recorrido de las
+peticiones y la responsabilidad de las funciones y capas.

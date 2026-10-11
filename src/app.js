@@ -3,6 +3,7 @@ import {
   errorHandler,
   notFoundHandler
 } from "./errors/error-handler.js";
+import { authRouter } from "./routes/auth.routes.js";
 import { tasksRouter } from "./routes/tasks.routes.js";
 
 export const app = express();
@@ -26,6 +27,7 @@ app.get("/health", (_req, res) => {
   });
 });
 
+app.use("/auth", authRouter);
 app.use("/tasks", tasksRouter);
 
 app.use(notFoundHandler);

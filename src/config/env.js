@@ -23,6 +23,12 @@ function parsePositiveInteger(value, name) {
 export const env = Object.freeze({
   port: parsePositiveInteger(process.env.PORT ?? "3000", "PORT"),
 
+  // Coste usado por bcrypt al crear y comprobar hashes de contraseña.
+  passwordRounds: parsePositiveInteger(
+    process.env.PASSWORD_ROUNDS ?? "12",
+    "PASSWORD_ROUNDS"
+  ),
+
   db: Object.freeze({
     host: requireEnv("DB_HOST"),
     port: parsePositiveInteger(

@@ -6,6 +6,92 @@ GET {{baseUrl}}/
 ### Estado de la API
 GET {{baseUrl}}/health
 
+### Registrar a Ana (primer uso: devuelve 201)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Ana Torres",
+  "email": "ana@example.com",
+  "password": "una frase de acceso segura"
+}
+
+### Registrar a Luis para probar un segundo usuario
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Luis Pérez",
+  "email": "luis@example.com",
+  "password": "otra frase de acceso segura"
+}
+
+### Intentar registrar el mismo correo (esperado: 409)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Otra Ana",
+  "email": "ANA@EXAMPLE.COM",
+  "password": "una frase de acceso segura"
+}
+
+### Datos de registro no válidos (esperado: 422)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "",
+  "email": "correo-invalido",
+  "password": "corta"
+}
+
+### Intentar asignar el rol admin durante el registro (esperado: 422)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Usuario no autorizado",
+  "email": "rol@example.com",
+  "password": "una frase de acceso segura",
+  "role": "admin"
+}
+
+### Login correcto de Ana (esperado: 200)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "ANA@EXAMPLE.COM",
+  "password": "una frase de acceso segura"
+}
+
+### Login con contraseña incorrecta (esperado: 401)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "ana@example.com",
+  "password": "contraseña incorrecta"
+}
+
+### Login con usuario inexistente (esperado: mismo 401 y mensaje)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "nadie@example.com",
+  "password": "contraseña incorrecta"
+}
+
 ### Listar tareas
 GET {{baseUrl}}/tasks
 Accept: application/json
