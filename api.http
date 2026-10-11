@@ -1,9 +1,9 @@
 @baseUrl = http://localhost:3000
 
-### Información
+### Información pública
 GET {{baseUrl}}/
 
-### Estado de la API
+### Estado de la API (pública)
 GET {{baseUrl}}/health
 
 ### Registrar a Ana (primer uso: devuelve 201)
@@ -17,7 +17,7 @@ Accept: application/json
   "password": "una frase de acceso segura"
 }
 
-### Registrar a Luis para probar un segundo usuario
+### Registrar a Luis para probar el aislamiento entre cuentas
 POST {{baseUrl}}/auth/register
 Content-Type: application/json
 Accept: application/json
@@ -62,38 +62,33 @@ Accept: application/json
   "role": "admin"
 }
 
-### Login correcto de Ana (esperado: 200)
+### Login de Ana
 # @name loginAna
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 Accept: application/json
 
 {
-  "email": "ANA@EXAMPLE.COM",
+  "email": "ana@example.com",
   "password": "una frase de acceso segura"
 }
 
-### Token Bearer de Ana (REST Client toma accessToken del login anterior)
+### Token Bearer de Ana
 @anaToken = {{loginAna.response.body.accessToken}}
 
-### Consultar usuario autenticado (esperado: 200)
-GET {{baseUrl}}/auth/me
-Authorization: Bearer {{anaToken}}
+### Login de Luis
+# @name loginLuis
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
 Accept: application/json
 
-### /auth/me sin token (esperado: 401)
-GET {{baseUrl}}/auth/me
-Accept: application/json
+{
+  "email": "luis@example.com",
+  "password": "otra frase de acceso segura"
+}
 
-### /auth/me con esquema incorrecto (esperado: 401)
-GET {{baseUrl}}/auth/me
-Authorization: Basic {{anaToken}}
-Accept: application/json
-
-### /auth/me con token manipulado o inválido (esperado: 401)
-GET {{baseUrl}}/auth/me
-Authorization: Bearer token.invalido.manipulado
-Accept: application/json
+### Token Bearer de Luis
+@luisToken = {{loginLuis.response.body.accessToken}}
 
 ### Login con contraseña incorrecta (esperado: 401)
 POST {{baseUrl}}/auth/login
@@ -105,7 +100,7 @@ Accept: application/json
   "password": "contraseña incorrecta"
 }
 
-### Login con usuario inexistente (esperado: mismo 401 y mensaje)
+### Login con usuario inexistente (mismo 401 y mensaje)
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 Accept: application/json
@@ -115,59 +110,114 @@ Accept: application/json
   "password": "contraseña incorrecta"
 }
 
-### Listar tareas
-GET {{baseUrl}}/tasks
+### Consultar usuario autenticado (esperado: 200)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{anaToken}}
 Accept: application/json
 
-### Filtrar por estado
-GET {{baseUrl}}/tasks?status=in_progress
+### Perfil sin token (esperado: 401)
+GET {{baseUrl}}/auth/me
 Accept: application/json
 
-### Filtrar por prioridad
-GET {{baseUrl}}/tasks?priority=high
+### Perfil con token inválido (esperado: 401)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer token.invalido.manipulado
 Accept: application/json
 
-### Consultar una tarea
-GET {{baseUrl}}/tasks/1
+### Estadísticas con cuenta normal (esperado: 403)
+GET {{baseUrl}}/admin/stats
+Authorization: Bearer {{luisToken}}
 Accept: application/json
 
-### Crear una tarea
+### Para probar como admin, ejecuta en MySQL esta instrucción:
+# UPDATE users SET role = 'admin' WHERE email = 'ana@example.com';
+# authenticate carga el rol actual de MySQL, así que no es necesario renovar el token.
+
+### Estadísticas como Ana después de asignarle rol admin (esperado: 200)
+GET {{baseUrl}}/admin/stats
+Authorization: Bearer {{anaToken}}
+Accept: application/json
+
+### Crear una tarea privada de Ana
+# @name createAnaTask
 POST {{baseUrl}}/tasks
+Authorization: Bearer {{anaToken}}
 Content-Type: application/json
 Accept: application/json
 
 {
-  "title": "Preparar práctica",
-  "description": "Completar el CRUD con MySQL",
+  "title": "Tarea privada de Ana",
+  "description": "Solo Ana debe acceder a esta tarea",
   "status": "pending",
   "priority": "high",
-  "dueDate": "2026-10-15"
+  "dueDate": null
 }
 
-### Crear una tarea mínima
-POST {{baseUrl}}/tasks
+### Guardar el id de la tarea de Ana
+@anaTaskId = {{createAnaTask.response.body.id}}
+
+### Listar tareas de Ana
+GET {{baseUrl}}/tasks
+Authorization: Bearer {{anaToken}}
+Accept: application/json
+
+### Luis no ve las tareas de Ana
+GET {{baseUrl}}/tasks
+Authorization: Bearer {{luisToken}}
+Accept: application/json
+
+### Ana consulta su propia tarea (esperado: 200)
+GET {{baseUrl}}/tasks/{{anaTaskId}}
+Authorization: Bearer {{anaToken}}
+Accept: application/json
+
+### Luis intenta consultar la tarea de Ana (esperado: 404)
+GET {{baseUrl}}/tasks/{{anaTaskId}}
+Authorization: Bearer {{luisToken}}
+Accept: application/json
+
+### Luis intenta modificar la tarea de Ana (esperado: 404)
+PATCH {{baseUrl}}/tasks/{{anaTaskId}}
+Authorization: Bearer {{luisToken}}
 Content-Type: application/json
 Accept: application/json
 
 {
-  "title": "Revisar documentación"
+  "title": "Intento de cambio ajeno"
 }
 
-### Sustituir una tarea
-PUT {{baseUrl}}/tasks/1
+### Luis intenta eliminar la tarea de Ana (esperado: 404)
+DELETE {{baseUrl}}/tasks/{{anaTaskId}}
+Authorization: Bearer {{luisToken}}
+Accept: application/json
+
+### Filtrar tareas de Ana por estado
+GET {{baseUrl}}/tasks?status=pending
+Authorization: Bearer {{anaToken}}
+Accept: application/json
+
+### Filtrar tareas de Ana por prioridad
+GET {{baseUrl}}/tasks?priority=high
+Authorization: Bearer {{anaToken}}
+Accept: application/json
+
+### Sustituir la tarea propia de Ana
+PUT {{baseUrl}}/tasks/{{anaTaskId}}
+Authorization: Bearer {{anaToken}}
 Content-Type: application/json
 Accept: application/json
 
 {
-  "title": "Preparar entorno actualizado",
-  "description": "Revisar Node.js, npm y MySQL",
-  "status": "completed",
+  "title": "Tarea actualizada por Ana",
+  "description": "Ana es la propietaria",
+  "status": "in_progress",
   "priority": "medium",
   "dueDate": null
 }
 
-### Modificar parcialmente una tarea
-PATCH {{baseUrl}}/tasks/1
+### Modificar parcialmente la tarea propia de Ana
+PATCH {{baseUrl}}/tasks/{{anaTaskId}}
+Authorization: Bearer {{anaToken}}
 Content-Type: application/json
 Accept: application/json
 
@@ -175,19 +225,28 @@ Accept: application/json
   "status": "completed"
 }
 
-### Eliminar una tarea
-DELETE {{baseUrl}}/tasks/2
+### Sin token no se pueden listar tareas (esperado: 401)
+GET {{baseUrl}}/tasks
+Accept: application/json
+
+### Token inválido no permite acceder a tareas (esperado: 401)
+GET {{baseUrl}}/tasks
+Authorization: Bearer token.invalido.manipulado
+Accept: application/json
 
 ### Identificador no válido
 GET {{baseUrl}}/tasks/abc
+Authorization: Bearer {{anaToken}}
 Accept: application/json
 
 ### Tarea inexistente
 GET {{baseUrl}}/tasks/999999
+Authorization: Bearer {{anaToken}}
 Accept: application/json
 
-### Datos no válidos
+### Datos de tarea no válidos
 POST {{baseUrl}}/tasks
+Authorization: Bearer {{anaToken}}
 Content-Type: application/json
 Accept: application/json
 
@@ -198,9 +257,26 @@ Accept: application/json
   "dueDate": "15/10/2026"
 }
 
-### JSON incorrecto
+### El cliente no puede elegir el propietario (esperado: 422)
 POST {{baseUrl}}/tasks
+Authorization: Bearer {{anaToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "No se acepta userId del cliente",
+  "userId": 1
+}
+
+### JSON mal formado (esperado: 400)
+POST {{baseUrl}}/tasks
+Authorization: Bearer {{anaToken}}
 Content-Type: application/json
 
 {
   "title": "Falta cerrar el objeto"
+
+### Eliminar la tarea propia al final de la práctica
+DELETE {{baseUrl}}/tasks/{{anaTaskId}}
+Authorization: Bearer {{anaToken}}
+Accept: application/json

@@ -134,10 +134,28 @@ como para uno inexistente.
 
 El login también devuelve `accessToken` y `tokenType: "Bearer"`. La petición
 `GET /auth/me` comprueba la firma, el algoritmo, la caducidad, el emisor y la
-audiencia del token y responde con los datos actuales del usuario. En `api.http`
-puedes ejecutar el login llamado `loginAna` y luego probar `/auth/me` con el
-token obtenido; las pruebas sin token, con esquema incorrecto y con token
-inválido deben devolver `401`.
+audiencia del token y responde con los datos actuales del usuario. En el hito
+final, esta verificación se realiza mediante el middleware `authenticate`.
+
+Las rutas `/tasks` necesitan un Bearer token. El middleware incorpora el usuario
+actual a `req.user`, y cada operación consulta o modifica tareas usando
+`req.user.id`. Por eso una cuenta no puede listar, consultar, modificar o
+eliminar tareas de otra cuenta; los recursos ajenos responden `404`.
+
+La ruta `GET /admin/stats` requiere autenticación y rol `admin`. Para probarla,
+promociona Ana desde MySQL:
+
+```sql
+UPDATE users SET role = 'admin' WHERE email = 'ana@example.com';
+```
+
+El middleware consulta el rol vigente en MySQL al autenticar cada petición, así
+que Ana puede volver a probar con el token que ya tenía. Luis, con rol `user`,
+debe recibir `403`. Las consultas administrativas están separadas en
+repositorio, servicio y controlador, siguiendo la arquitectura del proyecto.
+
+En `api.http` se puede ejecutar el flujo de dos cuentas: iniciar sesión como
+Ana y Luis, crear una tarea de Ana y comprobar que Luis no puede acceder a ella.
 
 El archivo `api.http` mantiene también ejemplos de las operaciones CRUD del
 hito actual.
@@ -154,6 +172,9 @@ En el hito inicial del CRUD se esperan estas respuestas:
 | Tarea inexistente | `404` |
 | Datos de tarea no válidos | `422` |
 | JSON mal formado | `400` |
+| Ruta de tareas sin autenticación | `401` |
+| Tarea de otra cuenta | `404` |
+| Ruta admin con rol `user` | `403` |
 
 Las tareas quedan almacenadas en MySQL y permanecen después de reiniciar Node.js.
 
@@ -166,7 +187,7 @@ cambios con el siguiente:
 1. CRUD persistente con MySQL.
 2. Registro y login con contraseñas almacenadas como hash bcrypt.
 3. Emisión y comprobación de JWT en `/auth/me`.
-4. Middleware de autenticación, autorización y rutas protegidas.
+4. Middleware de autenticación, autorización por roles y tareas aisladas por usuario.
 
 El código incluye comentarios orientados a explicar el recorrido de las
 peticiones y la responsabilidad de las funciones y capas.

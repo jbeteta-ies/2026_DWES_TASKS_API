@@ -1,7 +1,5 @@
 import * as authService from "../services/auth.service.js";
 import { env } from "../config/env.js";
-import { AppError } from "../errors/AppError.js";
-import { extractBearerToken } from "../utils/bearer-token.js";
 
 /** Convierte el resultado del registro en una respuesta HTTP 201. */
 export async function register(req, res) {
@@ -24,15 +22,7 @@ export async function login(req, res) {
   });
 }
 
-/** Verifica el Bearer token y devuelve los datos actuales del usuario. */
+/** Devuelve el usuario que authenticate ya ha cargado en req.user. */
 export async function me(req, res) {
-  const token = extractBearerToken(req.headers.authorization);
-
-  if (!token) {
-    throw new AppError(401, "Se requiere un token Bearer");
-  }
-
-  const user = await authService.getCurrentUser(token);
-
-  return res.status(200).json({ user });
+  return res.status(200).json({ user: req.user });
 }

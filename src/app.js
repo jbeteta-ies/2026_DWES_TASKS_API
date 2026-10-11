@@ -3,6 +3,7 @@ import {
   errorHandler,
   notFoundHandler
 } from "./errors/error-handler.js";
+import { adminRouter } from "./routes/admin.routes.js";
 import { authRouter } from "./routes/auth.routes.js";
 import { tasksRouter } from "./routes/tasks.routes.js";
 
@@ -29,6 +30,7 @@ app.get("/health", (_req, res) => {
 
 app.use("/auth", authRouter);
 app.use("/tasks", tasksRouter);
+app.use("/admin", adminRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
